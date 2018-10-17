@@ -1,0 +1,5 @@
+/target
+**/*.rs.bk
+docs/*
+!docs/memoria.tex
+!docs/memoria.bib

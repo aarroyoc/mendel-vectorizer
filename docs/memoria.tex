@@ -1,5 +1,6 @@
 \documentclass{report}
 \usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
 
 
 \title{Vectorizado de siluetas por algoritmos genéticos}
@@ -9,31 +10,40 @@
 
 \maketitle
 
-\section{Introducción}
+\chapter{Introducción}
 En el mundo gráfico existen dos tipos fundamentales de imágenes. En primer lugar tenemos las rasterizadas, donde se almacena la información de cada píxel. Estas imágenes son las generadas por escáneres y cámaras fotográficas, así como por renders de ordenador. Los formatos más usados son JPEG y PNG. En segundo lugar tenemos las imágenes vectoriales, donde se almacenan funciones matemáticas. Este tipo de imágenes son muy usadas en ilustraciones, diseño gráfico y videojuegos. Los formatos más usados son SVG y AI. 
 
 Para obtener una imagen rasterizada desde una imagen vectorial, el procedimiento es sencillo. Simplmente se aplican las fórmulas matemáticas sobre un lienzo de un determinado tamaño. En cambio, el procedimiento inverso es extremadamente complicado. 
 
 El algoritmo genético presentado en este documento permite transformar imágenes rasterizadas sencillas en imágenes vectoriales.
 
-\section{Estructura general}
+\chapter{Estructura general}
 
-El procedimiento básico que seguirá el programa será el siguiente:
+El procedimiento básico que seguirá el programa, que será implementado en el lenguaje 
+de programación Rust\cite{Matsakis:2014:RL:2692956.2663188}, será el siguiente:
 
-\begin{itemize}
+\begin{enumerate}
 	\item Leer imagen rasterizada de entrada
 	\item Pasar la imagen a escala de grises
 	\item Detección de esquinas en la imagen
 	\item Optimización de las conexiones entre esquinas
 	\item Salida de la imagen vectorial
-\end{itemize}
+\end{enumerate}
 
-Para los dos primeros pasos usaremos librerías de código abierto para Rust. En concreto %% INSERTAR ALGO
+Para los 3 primeros pasos usaremos librerías de código abierto disponibles para Rust. Concretamente
+usaremos image e imageproc. Esta última contiene los algoritmos de detección de esquinas FAST9 y 
+FAST12.
 
-Para el paso 3 usaremos el algoritmo de Harris, en el que no nos detendremos.
+Será en el paso 4 es donde se aplicará el algoritmo genético, ya que se trata de una tarea de 
+optimización. Los algoritmos genéticos pueden ser aplicados de forma exitosa en problemas donde 
+necesitemos optimizar algo. En nuestro caso, queremos optimizar el trazado de una línea a que 
+respete la forma original sobre la que se está dibujando.
 
-Será en el paso 4 es donde se aplicará el algoritmo genético, ya que se trata de una tarea de optimización. Los algoritmos genéticos pueden ser aplicados de forma exitosa en problemas donde necesitemos optimizar algo. En nuestro caso, queremos optimizar el trazado de una línea a que respete la forma original sobre la que se está dibujando.
+Finalmente el último paso se realizará de forma trivial por nosotros mismos, 
+exportando la imagen a SVG.
 
-Finalmente el último paso se realizará de forma trivial por nosotros mismos, exportando la imagen a SVG.
+\bibliography{memoria}
+\bibliographystyle{acm}
+\nocite{*}
 
 \end{document}
