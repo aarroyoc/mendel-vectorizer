@@ -6,3 +6,11 @@ authors = ["Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>"]
 [dependencies]
 image = "*"
 imageproc = "*"
+cairo = "*"
+gdk = "*"
+clap = "*"
+gdk-pixbuf = "*"
+
+[dependencies.gtk]
+version = "0.5.0"
+features = ["v3_10"]
