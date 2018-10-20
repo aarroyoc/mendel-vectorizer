@@ -6,15 +6,20 @@ extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate clap;
 
-use image::GenericImageView;
-use image::imageops::colorops::grayscale;
-use imageproc::corners::corners_fast9;
+use imageproc::corners::Corner;
 
 use gtk::prelude::*;
 use gdk::prelude::*;
 use gtk::{Button, Window, DrawingArea};
 
 use clap::{Arg, App};
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
+mod corner;
+
+const CORNER_RADIUS: f64 = 5.0;
 
 fn main() {
     let matches = App::new("Mender Vectorizer")
@@ -29,6 +34,8 @@ fn main() {
     let inputfile = matches.value_of("INPUT").unwrap().to_string();
     println!("Using input file: {}", inputfile);
 
+    let corners: Rc<RefCell<Vec<Corner>>> = Rc::new(RefCell::new(Vec::new()));
+
 
     if gtk::init().is_err() {
         panic!("Failed to initialize GTK");
@@ -38,6 +45,8 @@ fn main() {
 
     let window: Window = builder.get_object("window").unwrap();
     let drawing: DrawingArea = builder.get_object("drawingArea").unwrap();
+    let clear: Button = builder.get_object("clear").unwrap();
+    let fast9: Button = builder.get_object("fast9").unwrap();
     let go: Button = builder.get_object("go").unwrap();
 
     window.show_all();
@@ -47,41 +56,83 @@ fn main() {
         Inhibit(false)
     });
 
+    /* Clear Button */
+
+    let c = corners.clone();
+    let d = drawing.clone();
+    clear.connect_clicked(move |_|{
+        let corners = c.clone();
+        (*corners.borrow_mut()).clear();
+        d.queue_draw();
+    });
+
+    /* FAST 9 Button */
+
+    let c = corners.clone();
+    fast9.connect_clicked(move |_|{
+        let corners = c.clone();
+
+    });
+
+    /* Execute algorithm */
+
     go.connect_clicked(|_| {
         println!("Clicked!");
     });
 
+    /* Drawing */
+
     let ifile = inputfile.clone();
+    let c = corners.clone();
     drawing.connect_draw(move |_widget,cr|{
+        let corners = c.clone();
+        let corners = corners.borrow();
+
         let img = gdk_pixbuf::Pixbuf::new_from_file(ifile.clone()).unwrap();
         cr.set_source_pixbuf(&img,0.0,0.0);
         cr.paint();
+
+        cr.set_source_rgb(1.0,0.0,0.0);
+        for corner in corners.iter(){
+            cr.arc(corner.x as f64,corner.y as f64,CORNER_RADIUS,0.0,std::f64::consts::PI*2.0);
+            cr.fill();
+        }
+
         Inhibit(false)
     });
 
     drawing.add_events(256);
 
-    drawing.connect_button_press_event(|_,event|{
+    /* Canvas Click */
+    let c = corners.clone();
+    drawing.connect_button_press_event(move |widget,event|{
+        let corners = c.clone();
         if event.get_event_type() == gdk::EventType::ButtonPress{
             let (x,y) = event.get_position();
-            println!("Click: ({},{})",x,y);
+            println!("Click: ({},{}) - {}",x,y,event.get_button());
+
+            if event.get_button() == 1{
+                corners.borrow_mut().push(Corner{
+                    x: x as u32,
+                    y: y as u32,
+                    score: std::f32::INFINITY,
+                });
+            }else{
+                let mut corners = corners.borrow_mut();
+                let c: Vec<Corner> = corners.iter().filter(|corner|{
+                    let xc = corner.x as f64;
+                    let yc = corner.y as f64;
+                    ((xc-x).powi(2) + (yc-y).powi(2)).sqrt() > CORNER_RADIUS
+                })
+                .cloned()
+                .collect();
+                *corners = c;
+            }
         }
+        widget.queue_draw();
         Inhibit(true)
     });
 
     gtk::main();
-
-    /*let img = image::open("assets/cuadrado.png").unwrap();
-    let (width, height) = img.dimensions();
-    let img = grayscale(&img);
-    let mut corners_img = image::GrayImage::new(width,height);
-    let corners = corners_fast9(&img,0);
-    
-    for corner in corners {
-        println!("Corner: ({},{})\tScore: {}",corner.x,corner.y,corner.score);
-        let pixel = image::Luma([255 as u8]);
-        corners_img.put_pixel(corner.x,corner.y,pixel);
-    }
-    corners_img.save("output.png").unwrap();*/
 }
 
