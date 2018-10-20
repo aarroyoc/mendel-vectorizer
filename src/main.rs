@@ -69,9 +69,17 @@ fn main() {
     /* FAST 9 Button */
 
     let c = corners.clone();
+    let d = drawing.clone();
+    let i = inputfile.clone();
     fast9.connect_clicked(move |_|{
         let corners = c.clone();
-
+        let inputfile = i.clone();
+        {
+            let mut corners = corners.borrow_mut();
+            let mut fast9 = corner::fast9(inputfile);
+            corners.append(&mut fast9);
+        }
+        d.queue_draw();
     });
 
     /* Execute algorithm */
