@@ -1,6 +1,7 @@
 \documentclass{report}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
+\usepackage{graphicx}
 
 
 \title{Vectorizado de siluetas por algoritmos genéticos}
@@ -32,7 +33,8 @@ de programación Rust\cite{Matsakis:2014:RL:2692956.2663188}, será el siguiente
 
 Para los 3 primeros pasos usaremos librerías de código abierto disponibles para Rust. Concretamente
 usaremos image e imageproc. Esta última contiene los algoritmos de detección de esquinas FAST9 y 
-FAST12.
+FAST12. Sin embargo posteriormente se comprobó que ambos algoritmos tenían tasas de acierto
+demasiado bajas y por ello se permite la edición manual de las esquinas.
 
 Será en el paso 4 es donde se aplicará el algoritmo genético, ya que se trata de una tarea de 
 optimización. Los algoritmos genéticos pueden ser aplicados de forma exitosa en problemas donde 
@@ -41,6 +43,48 @@ respete la forma original sobre la que se está dibujando.
 
 Finalmente el último paso se realizará de forma trivial por nosotros mismos, 
 exportando la imagen a SVG.
+
+\chapter{Detección de esquinas}
+La librería imageproc contiene los algoritmos de detección de esquinas
+FAST9 y FAST12 \cite{rosten_2006_machine} (acrónimo de Features from accelerated segment test). 
+Estos algoritmos, son mucho más rápidos que el
+ famoso algoritmo de Harris-Stephens, ofreciendo una calidad aceptable, aunque no suficiente para 
+ nuestro algoritmo de vectorización. Un ejemplo de su funcionamiento lo podemos ver en la 
+ figura \ref{fig:fast-png}.
+
+ % EXPLICAR FAST
+
+\section{Interfaz de usuario}
+
+Debido a la baja tasa de aciertos de FAST9 y FAST12 en las imágenes de prueba, se permite también
+añadir puntos de forma manual. Para ello se ha diseñado una interfaz gráfica en GTK3, gracias a
+la librería gtk-rs que permite usar GTK en Rust. La interfaz fue diseñada en Glade. La interfaz, 
+que se aprecia en la figura \ref{fig:interfaz}, 
+es muy sencilla. El funcionamiento principal es con el ratón. Cuando se hace click izquierdo en un
+lugar de la imagen se añade una esquina. Cuando se hace click derecho, esa esquina se elimina. 
+Además hay varios botones en el lateral derecho. Un botón para aplicar FAST9 a la imagen \ref{fig:fast9}, otro para eliminar 
+todas las esquinas y otro para ejecutar el algoritmo.
+
+\begin{figure}
+	\center{
+		\includegraphics[width=\textwidth]{fast.png}
+	}
+	\caption{\label{fig:fast-png} Ejemplo de ejecución de FAST sobre una imagen}
+\end{figure}
+
+\begin{figure}
+	\center{
+		\includegraphics[width=\textwidth]{interfaz-usuario.png}
+	}
+	\caption{\label{fig:interfaz} Interfaz de usuario para seleccionar esquinas}
+\end{figure}
+
+\begin{figure}
+	\center{
+		\includegraphics[width=\textwidth]{fast9.png}
+	}
+	\caption{\label{fig:fast9} Ejemplo de ejecución de FAST9 en la interfaz de usuario}
+\end{figure}
 
 \bibliography{memoria}
 \bibliographystyle{acm}

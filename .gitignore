@@ -3,3 +3,4 @@
 docs/*
 !docs/memoria.tex
 !docs/memoria.bib
+!docs/*.png
