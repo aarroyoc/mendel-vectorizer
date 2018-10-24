@@ -18,6 +18,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 mod corner;
+mod genetic;
 
 const CORNER_RADIUS: f64 = 5.0;
 
@@ -83,9 +84,18 @@ fn main() {
     });
 
     /* Execute algorithm */
-
-    go.connect_clicked(|_| {
-        println!("Clicked!");
+    let c = corners.clone();
+    let d = drawing.clone();
+    let i = inputfile.clone();
+    go.connect_clicked(move |_| {
+        let corners = c.clone();
+        let corners = corners.borrow();
+        let inputfile = i.clone();
+        let lines = genetic::algorithm(inputfile,&*corners);
+        for line in lines {
+            //println!("Line: ");
+        }
+        d.queue_draw();
     });
 
     /* Drawing */
