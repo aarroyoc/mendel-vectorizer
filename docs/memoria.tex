@@ -12,11 +12,19 @@
 \maketitle
 
 \chapter{Introducción}
-En el mundo gráfico existen dos tipos fundamentales de imágenes. En primer lugar tenemos las rasterizadas, donde se almacena la información de cada píxel. Estas imágenes son las generadas por escáneres y cámaras fotográficas, así como por renders de ordenador. Los formatos más usados son JPEG y PNG. En segundo lugar tenemos las imágenes vectoriales, donde se almacenan funciones matemáticas. Este tipo de imágenes son muy usadas en ilustraciones, diseño gráfico y videojuegos. Los formatos más usados son SVG y AI. 
+En el mundo gráfico existen dos tipos fundamentales de imágenes.
+En primer lugar tenemos las rasterizadas, donde se almacena la información de cada píxel.
+Estas imágenes son las generadas por escáneres y cámaras fotográficas, así como por renders
+de ordenador. Los formatos más usados son JPEG y PNG. En segundo lugar tenemos las imágenes
+vectoriales, donde se almacenan funciones matemáticas. Este tipo de imágenes son muy usadas
+en ilustraciones, diseño gráfico y videojuegos. Los formatos más usados son SVG y AI. 
 
-Para obtener una imagen rasterizada desde una imagen vectorial, el procedimiento es sencillo. Simplmente se aplican las fórmulas matemáticas sobre un lienzo de un determinado tamaño. En cambio, el procedimiento inverso es extremadamente complicado. 
+Para obtener una imagen rasterizada desde una imagen vectorial, el procedimiento es
+sencillo. Simplmente se aplican las fórmulas matemáticas sobre un lienzo de un determinado
+tamaño. En cambio, el procedimiento inverso es extremadamente complicado. 
 
-El algoritmo genético presentado en este documento permite transformar imágenes rasterizadas sencillas en imágenes vectoriales.
+El algoritmo genético presentado en este documento permite transformar imágenes rasterizadas
+sencillas en imágenes vectoriales.
 
 \chapter{Estructura general}
 
@@ -39,7 +47,7 @@ demasiado bajas y por ello se permite la edición manual de las esquinas.
 Será en el paso 4 es donde se aplicará el algoritmo genético, ya que se trata de una tarea de 
 optimización. Los algoritmos genéticos pueden ser aplicados de forma exitosa en problemas donde 
 necesitemos optimizar algo. En nuestro caso, queremos optimizar el trazado de una línea a que 
-respete la forma original sobre la que se está dibujando.
+respete la forma original sobre la que se está dibujando. Esta línea será una curva cúbica de Bézier.
 
 Finalmente el último paso se realizará de forma trivial por nosotros mismos, 
 exportando la imagen a SVG.
@@ -85,6 +93,50 @@ todas las esquinas y otro para ejecutar el algoritmo.
 	}
 	\caption{\label{fig:fast9} Ejemplo de ejecución de FAST9 en la interfaz de usuario}
 \end{figure}
+
+\chapter{Algoritmo genético}
+
+Los algoritmos genéticos son aquellos que se basan en el concepto de la evolución biológica.
+En estos algoritmo se crea una muestra con parámetros aleatorios y se evalúa su desempeño.
+Los peores son eliminados y los mejores sufren mutaciones aleatorias. Así de forma repetitiva hasta
+llegar a tener una muestra con parámetros suficientemente buenos como para resolver el problema de 
+forma casi óptima.
+
+\section{Curva cúbica de Bézier}
+
+El algoritmo en esencia trata de encontrar una línea que una dos puntos, de forma lo más parecida
+posible a una imagen dada. Estas líneas en nuestro caso van a ser siempre curvas cúbicas de Bézier,
+un subtipo de spline muy usado en gráficos por ordenador.
+
+Estas curvas se basan en dos puntos de inicio y final y dos puntos de control, que permiten controlar
+la curva con facilidad, véase la figura \ref{fig:bezier}.
+
+\begin{figure}
+	\center{
+		\includegraphics[width=\textwidth]{bezier.png}
+	}
+	\caption{\label{fig:bezier} Curva cúbica de Bézier}
+\end{figure}
+
+La forma paramétrica de una curva cúbica de Bézier es la siguiente:  \\
+
+\begin{math}
+	\mathbf{B}(t)=\mathbf{P}_0(1-t)^3+3\mathbf{P}_1t(1-t)^2+3\mathbf{P}_2t^2(1-t)+\mathbf{P}_3t^3 \mbox{ , } t \in [0,1].
+\end{math}
+
+
+
+\section{Función de evaluación}
+
+Un ingrediente fundamental del algoritmo genético es la función de evaluación, que mide cuán buena
+es la solución dada por un individuo. Nuestra función de evaluación toma la curva cúbica de Bezier y 
+calcula
+los puntos en 100 lugares de la curva. Estos puntos se comparan con la imagen real, si ahí había una línea
+se suma un punto, si no, se resta.
+
+\section{Análisis de coste}
+
+
 
 \bibliography{memoria}
 \bibliographystyle{acm}

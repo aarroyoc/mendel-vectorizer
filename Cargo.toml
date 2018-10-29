@@ -6,7 +6,7 @@ authors = ["Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>"]
 [dependencies]
 image = "*"
 imageproc = "*"
-cairo = "*"
+cairo-rs = "0.5.0"
 gdk = "*"
 clap = "*"
 gdk-pixbuf = "*"

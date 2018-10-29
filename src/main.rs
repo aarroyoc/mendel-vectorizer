@@ -1,10 +1,10 @@
 extern crate image;
 extern crate imageproc;
 extern crate gtk;
-extern crate cairo;
 extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate clap;
+extern crate cairo;
 
 use imageproc::corners::Corner;
 
@@ -19,6 +19,7 @@ use std::rc::Rc;
 
 mod corner;
 mod genetic;
+mod bezier;
 
 const CORNER_RADIUS: f64 = 5.0;
 
@@ -36,6 +37,7 @@ fn main() {
     println!("Using input file: {}", inputfile);
 
     let corners: Rc<RefCell<Vec<Corner>>> = Rc::new(RefCell::new(Vec::new()));
+    let lines: Rc<RefCell<Vec<bezier::Bezier>>> = Rc::new(RefCell::new(Vec::new()));
 
 
     if gtk::init().is_err() {
@@ -60,10 +62,13 @@ fn main() {
     /* Clear Button */
 
     let c = corners.clone();
+    let l = lines.clone();
     let d = drawing.clone();
     clear.connect_clicked(move |_|{
         let corners = c.clone();
         (*corners.borrow_mut()).clear();
+        let lines = l.clone();
+        lines.borrow_mut().clear();
         d.queue_draw();
     });
 
@@ -85,16 +90,16 @@ fn main() {
 
     /* Execute algorithm */
     let c = corners.clone();
+    let l = lines.clone();
     let d = drawing.clone();
     let i = inputfile.clone();
     go.connect_clicked(move |_| {
         let corners = c.clone();
+        let lines = l.clone();
         let corners = corners.borrow();
         let inputfile = i.clone();
-        let lines = genetic::algorithm(inputfile,&*corners);
-        for line in lines {
-            //println!("Line: ");
-        }
+        let mut l=genetic::algorithm(inputfile,&*corners);
+        lines.borrow_mut().append(&mut l);
         d.queue_draw();
     });
 
@@ -102,9 +107,12 @@ fn main() {
 
     let ifile = inputfile.clone();
     let c = corners.clone();
+    let l = lines.clone();
     drawing.connect_draw(move |_widget,cr|{
         let corners = c.clone();
         let corners = corners.borrow();
+        let lines = l.clone();
+        let lines = lines.borrow();
 
         let img = gdk_pixbuf::Pixbuf::new_from_file(ifile.clone()).unwrap();
         cr.set_source_pixbuf(&img,0.0,0.0);
@@ -114,6 +122,10 @@ fn main() {
         for corner in corners.iter(){
             cr.arc(corner.x as f64,corner.y as f64,CORNER_RADIUS,0.0,std::f64::consts::PI*2.0);
             cr.fill();
+        }
+
+        for line in lines.iter(){
+            draw_bezier(cr,&line);
         }
 
         Inhibit(false)
@@ -154,3 +166,12 @@ fn main() {
     gtk::main();
 }
 
+fn draw_bezier(cr: &cairo::Context, line: &bezier::Bezier){
+    cr.set_source_rgb(0.0,0.0,0.0);
+    cr.set_line_width(1.0);
+    cr.move_to(line.start.x,line.start.y);
+    cr.curve_to(line.control1.x,line.control1.y,
+        line.control2.x,line.control2.y,
+        line.end.x,line.end.y);
+    cr.stroke();
+}
