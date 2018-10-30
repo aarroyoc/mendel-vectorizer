@@ -5,6 +5,7 @@ extern crate gdk;
 extern crate gdk_pixbuf;
 extern crate clap;
 extern crate cairo;
+extern crate rand;
 
 use imageproc::corners::Corner;
 
@@ -167,8 +168,8 @@ fn main() {
 }
 
 fn draw_bezier(cr: &cairo::Context, line: &bezier::Bezier){
-    cr.set_source_rgb(0.0,0.0,0.0);
-    cr.set_line_width(1.0);
+    cr.set_source_rgb(0.0,0.0,1.0);
+    cr.set_line_width(3.0);
     cr.move_to(line.start.x,line.start.y);
     cr.curve_to(line.control1.x,line.control1.y,
         line.control2.x,line.control2.y,

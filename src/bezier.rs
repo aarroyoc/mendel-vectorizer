@@ -3,6 +3,21 @@ pub struct Point{
     pub x: f64,
     pub y: f64,
 }
+impl Point {
+    pub fn distance(&self, other: &Point) -> f64{
+        ((self.x-other.x).powf(2.0) +
+        (self.y-other.y).powf(2.0)).sqrt()
+    }
+
+    pub fn middle(&self, other: &Point) -> Point{
+        Point {
+            x: (self.x+other.x)/2.0,
+            y: (self.y+other.y)/2.0,
+        }
+    }
+}
+
+#[derive(Clone)]
 /* Bezier */
 pub struct Bezier{
     pub start: Point,
