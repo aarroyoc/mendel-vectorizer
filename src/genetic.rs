@@ -10,7 +10,7 @@ use bezier::{Point,Bezier};
 
 use rand::prelude::*;
 use rand::Rng;
-use rand::distributions::{Normal,IndependentSample};
+use rand::distributions::Normal;
 
 const GOOD_ONES: usize = 500;
 
@@ -93,10 +93,10 @@ pub fn algorithm(image: String, corners: &Vec<Corner>) -> Vec<Bezier> {
                         let mutation_where: u32 = rng.gen_range(1,5);
                         // Solo muta un gen, respecto a una Normal
                         match mutation_where {
-                            1 => line.control1.x += normal.ind_sample(&mut rng),
-                            2 => line.control1.y += normal.ind_sample(&mut rng),
-                            3 => line.control2.x += normal.ind_sample(&mut rng),
-                            4 => line.control2.y += normal.ind_sample(&mut rng),
+                            1 => line.control1.x += rng.sample(normal),
+                            2 => line.control1.y += rng.sample(normal),
+                            3 => line.control2.x += rng.sample(normal),
+                            4 => line.control2.y += rng.sample(normal),
                             _ => ()
                         }
                     }
