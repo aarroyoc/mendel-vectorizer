@@ -12,13 +12,14 @@ use rand::prelude::*;
 use rand::Rng;
 use rand::distributions::Normal;
 
+use std::sync::mpsc::Sender;
+
 const GOOD_ONES: usize = 500;
 
-pub fn algorithm(image: String, corners: &Vec<Corner>) -> Vec<Bezier> {
+pub fn algorithm(image: String, corners: &Vec<Corner>, tx: Sender<Bezier>) {
     /* Abrir imagen */
     let image = image::open(image).unwrap(); /* O(1) */
     let image = grayscale(&image); /* O(n*m) n (ancho) m(alto) */
-    let mut lines = Vec::new();
 
     /* Para cada punto ejecutamos el algoritmo genético con el siguiente punto */
     for i in 0..corners.len()-1 {
@@ -111,9 +112,8 @@ pub fn algorithm(image: String, corners: &Vec<Corner>) -> Vec<Bezier> {
             population = natural_selection(&image,population);
         }
         println!("Correct: {}",evaluate(&image,&population[0]));
-        lines.push(population[0].clone());
+        tx.send(population[0].clone()).unwrap();
     }
-    lines
 }
 
 pub fn natural_selection(image: &GrayImage,mut population: Vec<Bezier>) -> Vec<Bezier>{

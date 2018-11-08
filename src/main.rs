@@ -17,6 +17,8 @@ use clap::{Arg, App};
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::thread;
+use std::sync::mpsc::channel;
 
 mod corner;
 mod genetic;
@@ -40,6 +42,8 @@ fn main() {
 
     let corners: Rc<RefCell<Vec<Corner>>> = Rc::new(RefCell::new(Vec::new()));
     let lines: Rc<RefCell<Vec<bezier::Bezier>>> = Rc::new(RefCell::new(Vec::new()));
+
+    let (tx, rx) = channel();
 
 
     if gtk::init().is_err() {
@@ -116,17 +120,20 @@ fn main() {
 
     /* Execute algorithm */
     let c = corners.clone();
-    let l = lines.clone();
-    let d = drawing.clone();
     let i = inputfile.clone();
-    go.connect_clicked(move |_| {
+    let tx = tx.clone();
+    go.connect_clicked(move |widget| {
         let corners = c.clone();
         let lines = l.clone();
         let corners = corners.borrow();
         let inputfile = i.clone();
-        let mut l=genetic::algorithm(inputfile,&*corners);
-        lines.borrow_mut().append(&mut l);
-        d.queue_draw();
+        widget.set_sensitive(false);
+        let tx = tx.clone();
+        let copy_corners = corners.clone();
+        thread::spawn(move || {
+            genetic::algorithm(inputfile,&copy_corners,tx);
+        });
+
     });
 
     /* Drawing */
@@ -187,6 +194,18 @@ fn main() {
         }
         widget.queue_draw();
         Inhibit(true)
+    });
+
+    let d = drawing.clone();
+    let l = lines.clone();
+    gtk::idle_add(move ||{
+        let lines = l.clone();
+        match rx.try_recv(){
+            Ok(line) => lines.borrow_mut().push(line),
+            Err(_) => (),
+        };
+        d.queue_draw();
+        gtk::Continue(true)
     });
 
     gtk::main();
