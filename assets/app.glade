@@ -87,7 +87,18 @@ Right click to delete it</property>
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkButton" id="export">
+                <property name="label" translatable="yes">Export as SVG...</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="halign">center</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
             </child>
             <child>
               <object class="GtkButton" id="go">
@@ -114,7 +125,7 @@ Right click to delete it</property>
         </child>
       </object>
     </child>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
   </object>

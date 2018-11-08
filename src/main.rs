@@ -21,6 +21,7 @@ use std::rc::Rc;
 mod corner;
 mod genetic;
 mod bezier;
+mod export;
 
 const CORNER_RADIUS: f64 = 5.0;
 
@@ -51,6 +52,7 @@ fn main() {
     let drawing: DrawingArea = builder.get_object("drawingArea").unwrap();
     let clear: Button = builder.get_object("clear").unwrap();
     let fast9: Button = builder.get_object("fast9").unwrap();
+    let export: Button = builder.get_object("export").unwrap();
     let go: Button = builder.get_object("go").unwrap();
 
     window.show_all();
@@ -87,6 +89,29 @@ fn main() {
             corners.append(&mut fast9);
         }
         d.queue_draw();
+    });
+
+    /* Export as SVG */
+    let l = lines.clone();
+    export.connect_clicked(move |_|{
+        let lines = l.clone();
+        let save_dialog = gtk::FileChooserDialog::new(
+            Some("Save As"),
+            Some(&Window::new(gtk::WindowType::Popup)),
+            gtk::FileChooserAction::Save,
+        );
+
+        // Add the cancel and save buttons to that dialog.
+        save_dialog.add_button("Cancel", gtk::ResponseType::Cancel.into());
+        save_dialog.add_button("Save", gtk::ResponseType::Ok.into());
+
+        if save_dialog.run() == gtk::ResponseType::Ok.into() {
+            if let Some(filename) = save_dialog.get_filename(){
+                export::export(&lines.borrow(),filename);
+            }
+        }
+        save_dialog.destroy();
+
     });
 
     /* Execute algorithm */
@@ -140,7 +165,6 @@ fn main() {
         let corners = c.clone();
         if event.get_event_type() == gdk::EventType::ButtonPress{
             let (x,y) = event.get_position();
-            println!("Click: ({},{}) - {}",x,y,event.get_button());
 
             if event.get_button() == 1{
                 corners.borrow_mut().push(Corner{
@@ -149,7 +173,8 @@ fn main() {
                     score: std::f32::INFINITY,
                 });
             }else{
-                let mut corners = corners.borrow_mut();
+                /* Ya no tiene sentido borrar puntos ya que dependen del orden */
+                /*let mut corners = corners.borrow_mut();
                 let c: Vec<Corner> = corners.iter().filter(|corner|{
                     let xc = corner.x as f64;
                     let yc = corner.y as f64;
@@ -157,7 +182,7 @@ fn main() {
                 })
                 .cloned()
                 .collect();
-                *corners = c;
+                *corners = c;*/
             }
         }
         widget.queue_draw();

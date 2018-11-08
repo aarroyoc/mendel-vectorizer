@@ -6,7 +6,7 @@ use image::GrayImage;
 use image::imageops::colorops::grayscale;
 use imageproc::corners::Corner;
 
-use bezier::{Point,Bezier};
+use crate::bezier::{Point,Bezier};
 
 use rand::prelude::*;
 use rand::Rng;
@@ -20,97 +20,98 @@ pub fn algorithm(image: String, corners: &Vec<Corner>) -> Vec<Bezier> {
     let image = grayscale(&image); /* O(n*m) n (ancho) m(alto) */
     let mut lines = Vec::new();
 
-    /* Para cada punto ejecutamos el algoritmo genético */
-    for start_corner in corners {
+    /* Para cada punto ejecutamos el algoritmo genético con el siguiente punto */
+    for i in 0..corners.len()-1 {
+        let start_corner = corners[i];
         let start = Point { x: start_corner.x as f64, y: start_corner.y as f64};
-        for end_corner in corners {
-            if start_corner.x == end_corner.x && start_corner.y == end_corner.y {
-                continue;
-            }
-            let end = Point { x: end_corner.x as f64, y: end_corner.y as f64};
-            
-            // INITIAL POPULATION
-            let mut population = Vec::new();
-            let mut rng = thread_rng();
-            let distancia = start.distance(&end);
-            for _ in 0..1000 {
-                let xrand: f64 = rng.gen_range(-distancia,distancia);
-                let yrand: f64 = rng.gen_range(-distancia,distancia);
-                let mut control1 = start.middle(&end);
-                control1.x += xrand;
-                control1.y += yrand;
-                let mut control2 = start.middle(&end);
-                control2.x += xrand;
-                control2.y += yrand;
-                population.push(Bezier {start, end, control1, control2});
-            }
-            // SELECTION
-            let mut population = natural_selection(&image,population);
-
-            
-            while evaluate(&image,&population[0]) < 80.0 {
-                println!("BEST: {}",evaluate(&image,&population[0]));
-                // CROSSOVER
-                // Blend o Linear (Blend) https://engineering.purdue.edu/~sudhoff/ee630/Lecture04.pdf
-                let mut i: usize = 0;
-                let mut babies = Vec::new();
-                while i < GOOD_ONES{
-                    // PROBABILIDAD CROSSOVER 100%, pero se mantienen los anteriores
-                    let line1 = &population[i];
-                    let line2 = &population[i+1];
-
-                    let min_x = line1.control1.x.min(line2.control1.x);
-                    let max_x = line1.control1.x.max(line2.control1.x);
-                    let min_y = line1.control1.y.min(line2.control1.y);
-                    let max_y = line1.control1.y.max(line2.control1.y);
-                    let control1 = Point{
-                        x: rng.gen_range(min_x,max_x),
-                        y: rng.gen_range(min_y,max_y),
-                    };
-
-                    let min_x = line1.control2.x.min(line2.control2.x);
-                    let max_x = line1.control2.x.max(line2.control2.x);
-                    let min_y = line1.control2.y.min(line2.control2.y);
-                    let max_y = line1.control2.y.max(line2.control2.y);
-                    let control2 = Point{
-                        x: rng.gen_range(min_x,max_x),
-                        y: rng.gen_range(min_y,max_y),
-                    };
-
-                    babies.push(Bezier{start,end,control1,control2});
-
-                    i += 2;
-                }
-                population.append(&mut babies);
-
-                // MUTATION
-                // TASA DE MUTACION DEL 25%
-                population = population
-                .into_iter()
-                .map(|mut line|{
-                    if rng.gen::<f64>() < 0.10 {
-                        let normal = Normal::new(0.0,distancia/2.0);
-                        let mutation_where: u32 = rng.gen_range(1,5);
-                        // Solo muta un gen, respecto a una Normal
-                        match mutation_where {
-                            1 => line.control1.x += rng.sample(normal),
-                            2 => line.control1.y += rng.sample(normal),
-                            3 => line.control2.x += rng.sample(normal),
-                            4 => line.control2.y += rng.sample(normal),
-                            _ => ()
-                        }
-                    }
-                    line
-                })
-                .collect();
-
-                // VOLVER A EVALUAR
-                population = natural_selection(&image,population);
-            }
-            println!("Correct: {}",evaluate(&image,&population[0]));
-            return vec![population[0].clone()];
+        let end_corner = if corners.len() == i+1 {
+            corners[0]
+        }else{
+            corners[i+1]
+        };
+        let end = Point { x: end_corner.x as f64, y: end_corner.y as f64};
+        
+        // INITIAL POPULATION
+        let mut population = Vec::new();
+        let mut rng = thread_rng();
+        let distancia = start.distance(&end);
+        for _ in 0..1000 {
+            let xrand: f64 = rng.gen_range(-distancia,distancia);
+            let yrand: f64 = rng.gen_range(-distancia,distancia);
+            let mut control1 = start.middle(&end);
+            control1.x += xrand;
+            control1.y += yrand;
+            let mut control2 = start.middle(&end);
+            control2.x += xrand;
+            control2.y += yrand;
+            population.push(Bezier {start, end, control1, control2});
         }
+        // SELECTION
+        let mut population = natural_selection(&image,population);
 
+        
+        while evaluate(&image,&population[0]) < 80.0 {
+            println!("BEST: {}",evaluate(&image,&population[0]));
+            // CROSSOVER
+            // Blend o Linear (Blend) https://engineering.purdue.edu/~sudhoff/ee630/Lecture04.pdf
+            let mut i: usize = 0;
+            let mut babies = Vec::new();
+            while i < GOOD_ONES{
+                // PROBABILIDAD CROSSOVER 100%, pero se mantienen los anteriores
+                // 250 extra
+                let line1 = &population[i];
+                let line2 = &population[i+1];
+
+                let min_x = line1.control1.x.min(line2.control1.x);
+                let max_x = line1.control1.x.max(line2.control1.x);
+                let min_y = line1.control1.y.min(line2.control1.y);
+                let max_y = line1.control1.y.max(line2.control1.y);
+                let control1 = Point{
+                    x: rng.gen_range(min_x,max_x),
+                    y: rng.gen_range(min_y,max_y),
+                };
+
+                let min_x = line1.control2.x.min(line2.control2.x);
+                let max_x = line1.control2.x.max(line2.control2.x);
+                let min_y = line1.control2.y.min(line2.control2.y);
+                let max_y = line1.control2.y.max(line2.control2.y);
+                let control2 = Point{
+                    x: rng.gen_range(min_x,max_x),
+                    y: rng.gen_range(min_y,max_y),
+                };
+
+                babies.push(Bezier{start,end,control1,control2});
+
+                i += 2;
+            }
+            population.append(&mut babies);
+
+            // MUTATION
+            // TASA DE MUTACION DEL 25%
+            population = population
+            .into_iter()
+            .map(|mut line|{
+                if rng.gen::<f64>() < 0.10 {
+                    let normal = Normal::new(0.0,distancia/2.0);
+                    let mutation_where: u32 = rng.gen_range(1,5);
+                    // Solo muta un gen, respecto a una Normal
+                    match mutation_where {
+                        1 => line.control1.x += rng.sample(normal),
+                        2 => line.control1.y += rng.sample(normal),
+                        3 => line.control2.x += rng.sample(normal),
+                        4 => line.control2.y += rng.sample(normal),
+                        _ => ()
+                    }
+                }
+                line
+            })
+            .collect();
+
+            // VOLVER A EVALUAR
+            population = natural_selection(&image,population);
+        }
+        println!("Correct: {}",evaluate(&image,&population[0]));
+        lines.push(population[0].clone());
     }
     lines
 }
