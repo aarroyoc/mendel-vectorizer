@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::fs::File;
 use std::io::Write;
 
-pub fn export(lines: &Vec<Bezier>, filename: PathBuf) {
+pub fn export(lines: &[Bezier], filename: PathBuf) {
     let mut svg = String::from("<svg width=\"\" height=\"\" xmlns=\"http://www.w3.org/2000/svg\">");
     for line in lines {
         svg += &format!("<path d=\"M{} {} C {} {}, {} {}, {} {}\" style=\"stroke: black;fill:none\"/>",

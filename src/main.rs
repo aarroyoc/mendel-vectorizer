@@ -6,6 +6,7 @@ extern crate gdk_pixbuf;
 extern crate clap;
 extern crate cairo;
 extern crate rand;
+extern crate num_cpus;
 
 use imageproc::corners::Corner;
 
@@ -58,6 +59,7 @@ fn main() {
     let fast9: Button = builder.get_object("fast9").unwrap();
     let export: Button = builder.get_object("export").unwrap();
     let go: Button = builder.get_object("go").unwrap();
+    let progress: gtk::ProgressBar = builder.get_object("progress").unwrap();
 
     window.show_all();
 
@@ -124,16 +126,36 @@ fn main() {
     let tx = tx.clone();
     go.connect_clicked(move |widget| {
         let corners = c.clone();
-        let lines = l.clone();
         let corners = corners.borrow();
         let inputfile = i.clone();
         widget.set_sensitive(false);
-        let tx = tx.clone();
-        let copy_corners = corners.clone();
-        thread::spawn(move || {
-            genetic::algorithm(inputfile,&copy_corners,tx);
-        });
-
+        let cpus = num_cpus::get();
+        if cpus <= corners.len()-1{
+            let corners_per_thread = corners.len() / cpus;
+            let remainder_corners = corners.len() % cpus;
+            for i in 0..cpus{
+                let tx = tx.clone();
+                let copy_corners = corners.clone();
+                let inp = inputfile.clone();
+                thread::spawn(move || {
+                    genetic::algorithm(inp,&copy_corners[i*corners_per_thread..(i+1)*corners_per_thread+1],tx);
+                });
+            }
+            if remainder_corners > 1{
+                let tx = tx.clone();
+                let copy_corners = corners.clone();
+                let inp = inputfile.clone();
+                thread::spawn(move || {
+                    genetic::algorithm(inp,&copy_corners[cpus*corners_per_thread..],tx);
+                });
+            }
+        }else{
+            let tx = tx.clone();
+            let copy_corners = corners.clone();
+            thread::spawn(move || {
+                genetic::algorithm(inputfile,&copy_corners,tx);
+            });
+        }
     });
 
     /* Drawing */
@@ -196,12 +218,24 @@ fn main() {
         Inhibit(true)
     });
 
+    /* Idle */
+    let g = go.clone();
+    let p = progress.clone();
     let d = drawing.clone();
     let l = lines.clone();
+    let c = corners.clone();
     gtk::idle_add(move ||{
         let lines = l.clone();
+        let corners = c.clone();
         match rx.try_recv(){
-            Ok(line) => lines.borrow_mut().push(line),
+            Ok(line) => {
+                lines.borrow_mut().push(line);
+                p.set_fraction((lines.borrow().len() as f64)/(corners.borrow().len() as f64-1.0));
+                if lines.borrow().len() == corners.borrow().len()-1 {
+                    g.set_sensitive(true)
+                }
+                
+            },
             Err(_) => (),
         };
         d.queue_draw();
