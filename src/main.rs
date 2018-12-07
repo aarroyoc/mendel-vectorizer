@@ -14,6 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Mendel Vectorizer.  If not, see <https://www.gnu.org/licenses/>.
 */
+#![allow(clippy::many_single_char_names,clippy::cast_lossless)]
 
 use imageproc::corners::Corner;
 
@@ -137,7 +138,7 @@ fn main() {
         let inputfile = i.clone();
         widget.set_sensitive(false);
         let cpus = num_cpus::get();
-        if cpus <= corners.len()-1{
+        if cpus < corners.len(){
             let corners_per_thread = corners.len() / cpus;
             let remainder_corners = corners.len() % cpus;
             for i in 0..cpus{
@@ -145,7 +146,7 @@ fn main() {
                 let copy_corners = corners.clone();
                 let inp = inputfile.clone();
                 thread::spawn(move || {
-                    genetic::algorithm(inp,&copy_corners[i*corners_per_thread..(i+1)*corners_per_thread+1],tx);
+                    genetic::algorithm(inp,&copy_corners[i*corners_per_thread..=(i+1)*corners_per_thread],&tx);
                 });
             }
             if remainder_corners > 1{
@@ -153,14 +154,14 @@ fn main() {
                 let copy_corners = corners.clone();
                 let inp = inputfile.clone();
                 thread::spawn(move || {
-                    genetic::algorithm(inp,&copy_corners[cpus*corners_per_thread..],tx);
+                    genetic::algorithm(inp,&copy_corners[cpus*corners_per_thread..],&tx);
                 });
             }
         }else{
             let tx = tx.clone();
             let copy_corners = corners.clone();
             thread::spawn(move || {
-                genetic::algorithm(inputfile,&copy_corners,tx);
+                genetic::algorithm(inputfile,&copy_corners,&tx);
             });
         }
     });
@@ -234,16 +235,12 @@ fn main() {
     gtk::idle_add(move ||{
         let lines = l.clone();
         let corners = c.clone();
-        match rx.try_recv(){
-            Ok(line) => {
-                lines.borrow_mut().push(line);
-                p.set_fraction((lines.borrow().len() as f64)/(corners.borrow().len() as f64-1.0));
-                if lines.borrow().len() == corners.borrow().len()-1 {
-                    g.set_sensitive(true)
-                }
-                
-            },
-            Err(_) => (),
+        if let Ok(line) = rx.try_recv(){
+            lines.borrow_mut().push(line);
+            p.set_fraction((lines.borrow().len() as f64)/(corners.borrow().len() as f64-1.0));
+            if lines.borrow().len() == corners.borrow().len()-1 {
+                g.set_sensitive(true)
+            }
         };
         d.queue_draw();
         gtk::Continue(true)

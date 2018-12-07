@@ -32,7 +32,7 @@ use std::sync::mpsc::Sender;
 
 const GOOD_ONES: usize = 500;
 
-pub fn algorithm(image: String, corners: &[Corner], tx: Sender<Bezier>) {
+pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
     /* Abrir imagen */
     let image = image::open(image).unwrap(); /* O(1) */
     let image = grayscale(&image); /* O(n*m) n (ancho) m(alto) */
