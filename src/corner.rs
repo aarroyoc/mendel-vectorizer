@@ -15,12 +15,11 @@
  *  along with Mendel Vectorizer.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 use image::imageops::colorops::grayscale;
 use imageproc::corners::{corners_fast9, Corner};
 
 pub fn fast9(img: String) -> Vec<Corner> {
     let img = image::open(img).unwrap();
     let img = grayscale(&img);
-    corners_fast9(&img,50)
+    corners_fast9(&img, 50)
 }

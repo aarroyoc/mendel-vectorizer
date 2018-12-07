@@ -14,25 +14,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with Mendel Vectorizer.  If not, see <https://www.gnu.org/licenses/>.
 */
-#![allow(clippy::many_single_char_names,clippy::cast_lossless)]
+#![allow(clippy::many_single_char_names, clippy::cast_lossless)]
 
 use imageproc::corners::Corner;
 
-use gtk::prelude::*;
 use gdk::prelude::*;
-use gtk::{Button, Window, DrawingArea};
+use gtk::prelude::*;
+use gtk::{Button, DrawingArea, Window};
 
-use clap::{Arg, App};
+use clap::{App, Arg};
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::thread;
 use std::sync::mpsc::channel;
+use std::thread;
 
-mod corner;
-mod genetic;
 mod bezier;
+mod corner;
 mod export;
+mod genetic;
 
 const CORNER_RADIUS: f64 = 5.0;
 
@@ -41,10 +41,12 @@ fn main() {
         .version("1.0")
         .author("Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>")
         .about("Vectorizes an image using genetic algorithms")
-        .arg(Arg::with_name("INPUT")
-            .help("Sets the input image")
-            .required(true)
-            .index(1))
+        .arg(
+            Arg::with_name("INPUT")
+                .help("Sets the input image")
+                .required(true)
+                .index(1),
+        )
         .get_matches();
     let inputfile = matches.value_of("INPUT").unwrap().to_string();
     println!("Using input file: {}", inputfile);
@@ -53,7 +55,6 @@ fn main() {
     let lines: Rc<RefCell<Vec<bezier::Bezier>>> = Rc::new(RefCell::new(Vec::new()));
 
     let (tx, rx) = channel();
-
 
     if gtk::init().is_err() {
         panic!("Failed to initialize GTK");
@@ -81,7 +82,7 @@ fn main() {
     let c = corners.clone();
     let l = lines.clone();
     let d = drawing.clone();
-    clear.connect_clicked(move |_|{
+    clear.connect_clicked(move |_| {
         let corners = c.clone();
         (*corners.borrow_mut()).clear();
         let lines = l.clone();
@@ -94,7 +95,7 @@ fn main() {
     let c = corners.clone();
     let d = drawing.clone();
     let i = inputfile.clone();
-    fast9.connect_clicked(move |_|{
+    fast9.connect_clicked(move |_| {
         let corners = c.clone();
         let inputfile = i.clone();
         {
@@ -107,7 +108,7 @@ fn main() {
 
     /* Export as SVG */
     let l = lines.clone();
-    export.connect_clicked(move |_|{
+    export.connect_clicked(move |_| {
         let lines = l.clone();
         let save_dialog = gtk::FileChooserDialog::new(
             Some("Save As"),
@@ -120,12 +121,11 @@ fn main() {
         save_dialog.add_button("Save", gtk::ResponseType::Ok.into());
 
         if save_dialog.run() == gtk::ResponseType::Ok.into() {
-            if let Some(filename) = save_dialog.get_filename(){
-                export::export(&lines.borrow(),filename);
+            if let Some(filename) = save_dialog.get_filename() {
+                export::export(&lines.borrow(), filename);
             }
         }
         save_dialog.destroy();
-
     });
 
     /* Execute algorithm */
@@ -138,30 +138,34 @@ fn main() {
         let inputfile = i.clone();
         widget.set_sensitive(false);
         let cpus = num_cpus::get();
-        if cpus < corners.len(){
+        if cpus < corners.len() {
             let corners_per_thread = corners.len() / cpus;
             let remainder_corners = corners.len() % cpus;
-            for i in 0..cpus{
+            for i in 0..cpus {
                 let tx = tx.clone();
                 let copy_corners = corners.clone();
                 let inp = inputfile.clone();
                 thread::spawn(move || {
-                    genetic::algorithm(inp,&copy_corners[i*corners_per_thread..=(i+1)*corners_per_thread],&tx);
+                    genetic::algorithm(
+                        inp,
+                        &copy_corners[i * corners_per_thread..=(i + 1) * corners_per_thread],
+                        &tx,
+                    );
                 });
             }
-            if remainder_corners > 1{
+            if remainder_corners > 1 {
                 let tx = tx.clone();
                 let copy_corners = corners.clone();
                 let inp = inputfile.clone();
                 thread::spawn(move || {
-                    genetic::algorithm(inp,&copy_corners[cpus*corners_per_thread..],&tx);
+                    genetic::algorithm(inp, &copy_corners[cpus * corners_per_thread..], &tx);
                 });
             }
-        }else{
+        } else {
             let tx = tx.clone();
             let copy_corners = corners.clone();
             thread::spawn(move || {
-                genetic::algorithm(inputfile,&copy_corners,&tx);
+                genetic::algorithm(inputfile, &copy_corners, &tx);
             });
         }
     });
@@ -171,24 +175,30 @@ fn main() {
     let ifile = inputfile.clone();
     let c = corners.clone();
     let l = lines.clone();
-    drawing.connect_draw(move |_widget,cr|{
+    drawing.connect_draw(move |_widget, cr| {
         let corners = c.clone();
         let corners = corners.borrow();
         let lines = l.clone();
         let lines = lines.borrow();
 
         let img = gdk_pixbuf::Pixbuf::new_from_file(ifile.clone()).unwrap();
-        cr.set_source_pixbuf(&img,0.0,0.0);
+        cr.set_source_pixbuf(&img, 0.0, 0.0);
         cr.paint();
 
-        cr.set_source_rgb(1.0,0.0,0.0);
-        for corner in corners.iter(){
-            cr.arc(corner.x as f64,corner.y as f64,CORNER_RADIUS,0.0,std::f64::consts::PI*2.0);
+        cr.set_source_rgb(1.0, 0.0, 0.0);
+        for corner in corners.iter() {
+            cr.arc(
+                corner.x as f64,
+                corner.y as f64,
+                CORNER_RADIUS,
+                0.0,
+                std::f64::consts::PI * 2.0,
+            );
             cr.fill();
         }
 
-        for line in lines.iter(){
-            draw_bezier(cr,&line);
+        for line in lines.iter() {
+            draw_bezier(cr, &line);
         }
 
         Inhibit(false)
@@ -198,18 +208,18 @@ fn main() {
 
     /* Canvas Click */
     let c = corners.clone();
-    drawing.connect_button_press_event(move |widget,event|{
+    drawing.connect_button_press_event(move |widget, event| {
         let corners = c.clone();
-        if event.get_event_type() == gdk::EventType::ButtonPress{
-            let (x,y) = event.get_position();
+        if event.get_event_type() == gdk::EventType::ButtonPress {
+            let (x, y) = event.get_position();
 
-            if event.get_button() == 1{
-                corners.borrow_mut().push(Corner{
+            if event.get_button() == 1 {
+                corners.borrow_mut().push(Corner {
                     x: x as u32,
                     y: y as u32,
                     score: std::f32::INFINITY,
                 });
-            }else{
+            } else {
                 /* Ya no tiene sentido borrar puntos ya que dependen del orden */
                 /*let mut corners = corners.borrow_mut();
                 let c: Vec<Corner> = corners.iter().filter(|corner|{
@@ -232,13 +242,13 @@ fn main() {
     let d = drawing.clone();
     let l = lines.clone();
     let c = corners.clone();
-    gtk::idle_add(move ||{
+    gtk::idle_add(move || {
         let lines = l.clone();
         let corners = c.clone();
-        if let Ok(line) = rx.try_recv(){
+        if let Ok(line) = rx.try_recv() {
             lines.borrow_mut().push(line);
-            p.set_fraction((lines.borrow().len() as f64)/(corners.borrow().len() as f64-1.0));
-            if lines.borrow().len() == corners.borrow().len()-1 {
+            p.set_fraction((lines.borrow().len() as f64) / (corners.borrow().len() as f64 - 1.0));
+            if lines.borrow().len() == corners.borrow().len() - 1 {
                 g.set_sensitive(true)
             }
         };
@@ -249,12 +259,17 @@ fn main() {
     gtk::main();
 }
 
-fn draw_bezier(cr: &cairo::Context, line: &bezier::Bezier){
-    cr.set_source_rgb(0.0,0.0,1.0);
+fn draw_bezier(cr: &cairo::Context, line: &bezier::Bezier) {
+    cr.set_source_rgb(0.0, 0.0, 1.0);
     cr.set_line_width(3.0);
-    cr.move_to(line.start.x,line.start.y);
-    cr.curve_to(line.control1.x,line.control1.y,
-        line.control2.x,line.control2.y,
-        line.end.x,line.end.y);
+    cr.move_to(line.start.x, line.start.y);
+    cr.curve_to(
+        line.control1.x,
+        line.control1.y,
+        line.control2.x,
+        line.control2.y,
+        line.end.x,
+        line.end.y,
+    );
     cr.stroke();
 }
