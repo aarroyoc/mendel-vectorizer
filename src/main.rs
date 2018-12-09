@@ -36,7 +36,33 @@ mod genetic;
 
 const CORNER_RADIUS: f64 = 5.0;
 
+fn gtk_open_file() -> Option<std::path::PathBuf> {
+    let open_dialog = gtk::FileChooserDialog::new(
+        Some("Open file"),
+        Some(&Window::new(gtk::WindowType::Popup)),
+        gtk::FileChooserAction::Open,
+    );
+
+    open_dialog.add_button("Cancel", gtk::ResponseType::Cancel.into());
+    open_dialog.add_button("Open", gtk::ResponseType::Ok.into());
+
+    if open_dialog.run() == gtk::ResponseType::Ok.into() {
+        if let Some(filename) = open_dialog.get_filename() {
+            open_dialog.destroy();
+            return Some(filename);
+        } else {
+            open_dialog.destroy();
+            return None;
+        }
+    }
+    None
+}
+
 fn main() {
+    if gtk::init().is_err() {
+        panic!("Failed to initialize GTK");
+    }
+
     let matches = App::new("Mender Vectorizer")
         .version("1.0")
         .author("Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>")
@@ -44,11 +70,14 @@ fn main() {
         .arg(
             Arg::with_name("INPUT")
                 .help("Sets the input image")
-                .required(true)
+                .required(false)
                 .index(1),
         )
         .get_matches();
-    let inputfile = matches.value_of("INPUT").unwrap().to_string();
+    let inputfile = match matches.value_of("INPUT") {
+        Some(file) => file.to_string(),
+        None => gtk_open_file().unwrap().to_str().unwrap().to_string(),
+    };
     println!("Using input file: {}", inputfile);
 
     let corners: Rc<RefCell<Vec<Corner>>> = Rc::new(RefCell::new(Vec::new()));
@@ -56,9 +85,6 @@ fn main() {
 
     let (tx, rx) = channel();
 
-    if gtk::init().is_err() {
-        panic!("Failed to initialize GTK");
-    }
     let glade = include_str!("../assets/app.glade");
     let builder = gtk::Builder::new_from_string(glade);
 
