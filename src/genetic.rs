@@ -117,7 +117,7 @@ pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
             population.append(&mut babies);
 
             // MUTATION
-            // TASA DE MUTACION DEL 25%
+            // TASA DE MUTACION DEL 10%
             population = population
                 .into_iter()
                 .map(|mut line| {
