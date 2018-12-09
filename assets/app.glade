@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.0 -->
+<!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.10"/>
   <object class="GtkWindow" id="window">
@@ -7,6 +7,9 @@
     <property name="title" translatable="yes">Mendel Vectorizer</property>
     <property name="default_width">800</property>
     <property name="default_height">600</property>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
@@ -49,8 +52,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Left click to put a corner.
-Right click to delete it</property>
+                <property name="label" translatable="yes">Left click to put a corner</property>
                 <property name="wrap">True</property>
               </object>
               <packing>
@@ -136,9 +138,6 @@ Right click to delete it</property>
           </packing>
         </child>
       </object>
-    </child>
-    <child type="titlebar">
-      <placeholder/>
     </child>
   </object>
 </interface>
