@@ -2,18 +2,18 @@
 name = "mendel-vectorizer"
 version = "0.1.0"
 authors = ["Adrián Arroyo Calle <adrian.arroyocalle@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-image = "*"
-imageproc = "*"
-cairo-rs = "0.5.0"
-gdk = "0.9.0"
-clap = "2.32.x"
-gdk-pixbuf = "0.5.0"
-rand = "0.5.5"
-num_cpus = "1.0"
+image = "0.24.2"
+imageproc = "0.23.0"
+cairo-rs = "0.15.12"
+gdk = "0.15.4"
+clap = "3.2.7"
+gdk-pixbuf = "0.15.11"
+rand = "0.8.5"
+rand_distr = "0.4.3"
+num_cpus = "1.13.1"
 
 [dependencies.gtk]
-version = "0.5.0"
-features = ["v3_10"]
+version = "0.15.5"

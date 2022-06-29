@@ -22,7 +22,7 @@ use imageproc::corners::Corner;
 
 use crate::bezier::{Bezier, Point};
 
-use rand::distributions::Normal;
+use rand_distr::Normal;
 use rand::prelude::*;
 use rand::Rng;
 
@@ -57,8 +57,8 @@ pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
         let mut rng = thread_rng();
         let distancia = start.distance(&end);
         for _ in 0..1000 {
-            let xrand: f64 = rng.gen_range(-distancia, distancia);
-            let yrand: f64 = rng.gen_range(-distancia, distancia);
+            let xrand: f64 = rng.gen_range(-distancia..distancia);
+            let yrand: f64 = rng.gen_range(-distancia..distancia);
             let mut control1 = start.middle(&end);
             control1.x += xrand;
             control1.y += yrand;
@@ -92,8 +92,8 @@ pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
                 let min_y = line1.control1.y.min(line2.control1.y);
                 let max_y = line1.control1.y.max(line2.control1.y);
                 let control1 = Point {
-                    x: rng.gen_range(min_x, max_x),
-                    y: rng.gen_range(min_y, max_y),
+                    x: rng.gen_range(min_x..max_x),
+                    y: rng.gen_range(min_y..max_y),
                 };
 
                 let min_x = line1.control2.x.min(line2.control2.x);
@@ -101,8 +101,8 @@ pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
                 let min_y = line1.control2.y.min(line2.control2.y);
                 let max_y = line1.control2.y.max(line2.control2.y);
                 let control2 = Point {
-                    x: rng.gen_range(min_x, max_x),
-                    y: rng.gen_range(min_y, max_y),
+                    x: rng.gen_range(min_x..max_x),
+                    y: rng.gen_range(min_y..max_y),
                 };
 
                 babies.push(Bezier {
@@ -122,8 +122,8 @@ pub fn algorithm(image: String, corners: &[Corner], tx: &Sender<Bezier>) {
                 .into_iter()
                 .map(|mut line| {
                     if rng.gen::<f64>() < 0.10 {
-                        let normal = Normal::new(0.0, distancia / 2.0);
-                        let mutation_where: u32 = rng.gen_range(1, 5);
+                        let normal = Normal::new(0.0, distancia / 2.0).unwrap();
+                        let mutation_where: u32 = rng.gen_range(1..5);
                         // Solo muta un gen, respecto a una Normal
                         match mutation_where {
                             1 => line.control1.x += rng.sample(normal),
@@ -162,7 +162,7 @@ pub fn evaluate(image: &GrayImage, line: &Bezier) -> f64 {
         let y = point.y as u32;
         if image.in_bounds(x, y) {
             let pixel = image.get_pixel(x, y);
-            if pixel.data[0] < 200 {
+            if pixel[0] < 200 {
                 eval += 1.0;
             } else {
                 eval -= 100.0;

@@ -47,12 +47,12 @@ fn gtk_open_file() -> Option<std::path::PathBuf> {
     open_dialog.add_button("Open", gtk::ResponseType::Ok.into());
 
     if open_dialog.run() == gtk::ResponseType::Ok.into() {
-        if let Some(filename) = open_dialog.get_filename() {
-            open_dialog.destroy();
-            return Some(filename);
+        return if let Some(filename) = open_dialog.filename() {
+            open_dialog.hide();
+            Some(filename)
         } else {
-            open_dialog.destroy();
-            return None;
+            open_dialog.hide();
+            None
         }
     }
     None
@@ -86,15 +86,15 @@ fn main() {
     let (tx, rx) = channel();
 
     let glade = include_str!("../assets/app.glade");
-    let builder = gtk::Builder::new_from_string(glade);
+    let builder = gtk::Builder::from_string(glade);
 
-    let window: Window = builder.get_object("window").unwrap();
-    let drawing: DrawingArea = builder.get_object("drawingArea").unwrap();
-    let clear: Button = builder.get_object("clear").unwrap();
-    let fast9: Button = builder.get_object("fast9").unwrap();
-    let export: Button = builder.get_object("export").unwrap();
-    let go: Button = builder.get_object("go").unwrap();
-    let progress: gtk::ProgressBar = builder.get_object("progress").unwrap();
+    let window: Window = builder.object("window").unwrap();
+    let drawing: DrawingArea = builder.object("drawingArea").unwrap();
+    let clear: Button = builder.object("clear").unwrap();
+    let fast9: Button = builder.object("fast9").unwrap();
+    let export: Button = builder.object("export").unwrap();
+    let go: Button = builder.object("go").unwrap();
+    let progress: gtk::ProgressBar = builder.object("progress").unwrap();
 
     window.show_all();
 
@@ -147,11 +147,11 @@ fn main() {
         save_dialog.add_button("Save", gtk::ResponseType::Ok.into());
 
         if save_dialog.run() == gtk::ResponseType::Ok.into() {
-            if let Some(filename) = save_dialog.get_filename() {
+            if let Some(filename) = save_dialog.filename() {
                 export::export(&lines.borrow(), filename);
             }
         }
-        save_dialog.destroy();
+        save_dialog.hide();
     });
 
     /* Execute algorithm */
@@ -207,9 +207,9 @@ fn main() {
         let lines = l.clone();
         let lines = lines.borrow();
 
-        let img = gdk_pixbuf::Pixbuf::new_from_file(ifile.clone()).unwrap();
+        let img = gdk_pixbuf::Pixbuf::from_file(ifile.clone()).unwrap();
         cr.set_source_pixbuf(&img, 0.0, 0.0);
-        cr.paint();
+        cr.paint().unwrap();
 
         cr.set_source_rgb(1.0, 0.0, 0.0);
         for corner in corners.iter() {
@@ -220,7 +220,7 @@ fn main() {
                 0.0,
                 std::f64::consts::PI * 2.0,
             );
-            cr.fill();
+            cr.fill().unwrap();
         }
 
         for line in lines.iter() {
@@ -230,20 +230,20 @@ fn main() {
         Inhibit(false)
     });
 
-    drawing.add_events(256);
+    drawing.add_events(gdk::EventMask::all());
 
     /* Canvas Click */
     let c = corners.clone();
     drawing.connect_button_press_event(move |widget, event| {
         let corners = c.clone();
-        if event.get_event_type() == gdk::EventType::ButtonPress {
-            let (x, y) = event.get_position();
+        if event.event_type() == gdk::EventType::ButtonPress {
+            let (x, y) = event.position();
 
-            if event.get_button() == 1 {
+            if event.button() == 1 {
                 corners.borrow_mut().push(Corner {
                     x: x as u32,
                     y: y as u32,
-                    score: std::f32::INFINITY,
+                    score: f32::INFINITY,
                 });
             } else {
                 /* Ya no tiene sentido borrar puntos ya que dependen del orden */
@@ -268,7 +268,7 @@ fn main() {
     let d = drawing.clone();
     let l = lines.clone();
     let c = corners.clone();
-    gtk::idle_add(move || {
+    gtk::glib::source::idle_add_local(move || {
         let lines = l.clone();
         let corners = c.clone();
         if let Ok(line) = rx.try_recv() {
@@ -279,7 +279,7 @@ fn main() {
             }
         };
         d.queue_draw();
-        gtk::Continue(true)
+        gtk::glib::Continue(true)
     });
 
     gtk::main();
@@ -297,5 +297,5 @@ fn draw_bezier(cr: &cairo::Context, line: &bezier::Bezier) {
         line.end.x,
         line.end.y,
     );
-    cr.stroke();
+    cr.stroke().unwrap();
 }
